@@ -30,6 +30,7 @@ def periodic_run_task():
     """
     执行定时任务
     """
+    now = datetime.datetime.now()
     logger.error(u"celery 周期任务开始执行，当前时间：{}".format(now))
     execute_task()
     now = datetime.datetime.now()
