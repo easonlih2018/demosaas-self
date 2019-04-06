@@ -1,0 +1,67 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+
+    <div class="home-page" id="app">
+        <div class="wrappers">
+            <ve-line :data="lineData" width="800px"></ve-line>
+
+            <ve-histogram :data="histogramData" width="800px" :extend="extend" ></ve-histogram>
+            
+            <ve-pie :data="pieData" width="800px"></ve-pie>
+        </div>
+
+    </div>
+</%block>
+<script>
+    Vue.prototype.$http = axios;
+    Vue.use(iview);
+    new Vue({
+        el : "#app",
+        data (){
+            return {
+                lineData : {},
+                histogramData : {},
+                extend:{
+                    <!--设置柱状图每根柱子的宽度-->
+                    barMaxWidth: 30
+                },
+                pieData : {}
+            }
+        },
+
+        methods:{
+
+            get_line_data(){
+                
+                this.$http.post(site_url + 'get_line_data/', {}).then(result => {
+                    this.lineData = result.data.data;
+                })
+            },
+
+            get_histogram_data(){
+                
+                this.$http.post(site_url + 'get_histogram_data/', {}).then(result => {
+                    this.histogramData = result.data.data;
+                })
+            },
+
+            get_pie_data(){
+
+                this.$http.post(site_url + 'get_pie_data/', {}).then(result => {
+
+                    this.pieData = result.data.data;
+                })
+            }
+        },
+
+        mounted() {
+            this.get_line_data();
+            this.get_pie_data();
+            this.get_histogram_data();
+        }
+
+        
+
+    });
+</script>
