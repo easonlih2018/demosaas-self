@@ -19,6 +19,13 @@ class Hosts(models.Model):
     bk_mem = models.CharField(max_length=20)
     bk_os_type = models.CharField(max_length=20)
 
+    bk_biz_id = models.IntegerField(default=0)
     created_by = models.CharField(max_length=200)
 
+
+class HostPerf(models.Model):
+
+    bk_host_id = models.IntegerField()
+    when_created = models.DateTimeField(auto_now_add=True)
+    avgload = models.FloatField()
 

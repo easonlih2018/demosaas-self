@@ -1,0 +1,225 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+
+    <div class="home-page" id="app">
+        <div class="wrappers">
+            <i-form :label-width="100">
+               <form-item label="请输入IP">
+                      <i-input v-model="ip_filter"  placeholder="请输入IP..." />
+               </form-item>
+               <form-item>
+                        <i-button type="primary" @click="search_host_from_db" :loading="search_host_loading">查询主机</i-button>    
+                        <i-button type="primary" @click="show_hosts" >新增主机</i-button>    
+                </form-item>
+            </i-form>
+            <Card>
+                <p slot="title">
+                    <Icon type="ios-film-outline"></Icon>
+                    主机列表
+                </p>
+                <i-Table border :columns="hostColumn" :data="hosts" >
+
+                </i-Table>
+            </Card>
+            
+        </div>
+
+         <Modal v-model="search_host_modal"  title="查询主机"  @on-ok="save_host_toMonitor"
+                 @on-cancel="close_host_modal"  :mask-closable="false" :loading="true">
+         <i-form :label-width="100">
+             <form-item label="选择业务">
+                   <i-select v-model="biz_id" @on-change="search_host_from_cmdb">
+                        <i-option v-for="item in bizs" :value="item.bk_biz_id">{{item.bk_biz_name}}</i-option>
+                   </i-select>
+            </form-item>
+            <form-item label="选择主机">
+                   <i-select v-model="bk_host_id">
+                        <i-option v-for="item in hosts_fromCMDB" :value="item.bk_host_id">{{item.bk_host_innerip}}</i-option>
+                   </i-select>
+            </form-item>
+        </i-form>
+        </Modal>
+
+        <Modal v-model="show_perf_modal"  title="主机性能"  
+                 :mask-closable="false" :loading="true">
+            
+            <ve-line :data="lineData" width="800px"></ve-line>
+            <ve-pie :data="pieData" width="800px"></ve-pie>
+           
+
+        </Modal>
+    </div>
+</%block>
+<script>
+    Vue.prototype.$http = axios;
+    Vue.use(iview);
+    new Vue({
+        el : "#app",
+        data (){
+            return {
+                biz_id : "",
+                bizs : [],
+                ip_filter : "",
+                hostColumn :  [
+                    {
+                        title: '内网IP',
+                        key: 'bk_host_innerip'
+                    },
+                    {
+                        title: '系统名',
+                        key: 'bk_os_name'
+                    },
+                    {
+                        title: '主机名',
+                        key: 'bk_host_name'
+                    },
+                    {
+                        title: '云区域',
+                        key: 'bk_cloud_name'
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        width: 260,
+                        align: 'center',
+                        render: (h, params) => {
+                         
+                                return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.show_performance(params.index)
+                                        }
+                                    }
+                                }, '当前性能'),
+                                
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.delete_host_from_Monitor(params.index)
+                                        }
+                                    }
+                                }, '移除监控')
+                            ]);
+                           
+
+                            
+                        }
+                    }
+                   
+                ],
+                hosts : [],
+                search_host_loading : false,
+                search_host_modal : false,
+
+                hosts_fromCMDB : [],
+                bk_host_id : "",
+
+                show_perf_modal : false,
+                lineData : [],
+                histogramData : [],
+                pieData : []
+            }
+        },
+
+        methods:{
+            search_biz(){
+                this.$http.get(site_url + 'search_biz_from_cmdb').then(
+                    result => {
+                        this.bizs = result.data.data;
+                        if (this.bizs.length > 0 ){
+                            this.biz_id = this.bizs[0].bk_biz_id;
+                            this.search_host_from_cmdb();
+                        }
+
+                    }
+                )
+            },
+
+            search_host_from_cmdb(){
+               
+                this.$http.post(site_url + 'search_host_from_cmdb/',{
+                    bk_biz_id : this.biz_id,
+                    ip_list : this.ip_filter
+                }).then(
+                    result => {
+                        this.hosts_fromCMDB = result.data.data;
+                        if(this.hosts_fromCMDB.length>0){
+                            this.bk_host_id = this.hosts_fromCMDB[0].bk_host_id
+                        }
+                        
+                        
+                    }
+                )
+            },
+
+            search_host_from_db(){
+                this.search_host_loading = true;
+                this.$http.post(site_url + 'search_host_from_db/',{
+                    ip_filter : this.ip_filter
+                }).then(result => {
+                    this.hosts = result.data.data;
+                    this.search_host_loading = false;
+                })
+            },
+
+            save_host_toMonitor(){
+                let curHost;
+                this.hosts_fromCMDB.forEach(host => {
+                    if(host.bk_host_id == this.bk_host_id){
+                        curHost = host;
+                        curHost.bk_biz_id = this.biz_id;
+                    }
+                })
+                this.$http.post(site_url + 'create_host_to_db/', {
+                    host : curHost
+                }).then(result => {
+                    this.search_host_from_db();
+                    this.search_host_modal = false;
+                })
+            },
+
+            delete_host_from_Monitor(index){
+                this.$http.post(site_url + 'delete_host_from_db/', {
+                    id : this.hosts[index].id
+                }).then(result => {
+                     this.search_host_from_db();
+                })
+            },
+
+            show_hosts(){
+                this.search_host_modal = true;
+                this.search_biz();
+            },
+
+            close_host_modal(){
+                this.search_host_modal = false;
+                
+            }
+           
+        },
+
+        mounted() {
+            //this.search_biz();
+            this.search_host_from_db()
+        }
+
+        
+
+    });
+</script>

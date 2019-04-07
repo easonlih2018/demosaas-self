@@ -3,13 +3,15 @@ import json
 
 import requests
 from django.http import JsonResponse
-
+import datetime
 from account.decorators import login_exempt
 from common.mymako import render_mako_context
-from  common.mymako import render_json
+from common.mymako import render_json
 from conf.default import APP_ID, APP_TOKEN, BK_PAAS_HOST
 from home_application.esb_helper import *
-from models import *
+from models import Hosts, HostPerf
+from django.db.models import Q
+from celery_tasks import execute_task
 
 def home(request):
     """
@@ -56,6 +58,10 @@ def chart(request):
     chart
     """
     return render_mako_context(request, '/home_application/demo/chart.html')
+
+def hosts(request):
+
+    return render_mako_context(request, '/home_application/hosts.html')
 
 #region 准备
 
@@ -123,12 +129,15 @@ def search_host_from_db(request):
     filter_hosts = []
     if "ip_filter" in content:
         ip_filter = content["ip_filter"]
-        filter_hosts = Hosts.objects.filter(bk_host_innerip in ip_filter | bk_host_outerip in ip_filter)
+        if ip_filter != "":
+            filter_hosts = Hosts.objects.filter( Q(bk_host_innerip__in = ip_filter) | Q(bk_host_outerip__in = ip_filter))
+        else:
+            filter_hosts = Hosts.objects.all()
     else:
         filter_hosts = Hosts.objects.all()
 
-    result = list(filter_hosts)
-    return render_json({"result":True, "data":result})
+    result = list(filter_hosts.values())
+    return render_json({"result":True, "data": result})
 
 def create_host_to_db(request):
     
@@ -151,9 +160,12 @@ def create_host_to_db(request):
     host.bk_mem = content.get("bk_mem", "")
     host.bk_os_type = content.get("bk_os_type", "")
 
+    host.bk_biz_id = content.get("bk_biz_id", "")
     host.created_by = request.user.username
 
-    host.save()
+    if Hosts.objects.filter(bk_host_id = host.bk_host_id).count() == 0:
+         host.save()
+   
 
     return render_json({"result" : True, "message" : "ok"})
 
@@ -169,6 +181,51 @@ def delete_host_from_db(request):
         return render_json({"result" : True, "message":"ok"})
     
     return render_json({"result" : False, "message":"id 没有值"})
+
+
+def get_disk_perf(request):
+
+    content = json.loads(request.body)
+    biz_id = content["biz_id"]
+    ip_list = content["ip_list"]
+    script_content = '''#!/bin/bash
+    df -h
+    '''
+
+    log_result = run_script_and_get_log_content(biz_id, script_content, ip_list, request.user.username)
+    log_contents = log_result.split('\n')
+    del log_contents[0]
+    perfs = []
+    for log_content in log_contents:
+        logs = log_content.split()
+        if len(logs) > 5:
+            perf = {
+                        "Filesystem" : logs[0],
+                        "Size" : logs[1],
+                        "Used" : logs[2],
+                        "Avail" : logs[3],
+                        "UsePecent" : logs[4],
+                        "MountedOn" : logs[5]
+                    }
+            perfs.append(perf)
+
+def get_avgload(request):
+
+    #content = json.loads(request.body)
+    bk_host_id = 1
+    date_filter = datetime.datetime.now()-datetime.timedelta(hours=1)
+    host_avgloads = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = date_filter)
+    rows = []
+    for host_avgload in host_avgloads:
+        row = {
+            "time" : host_avgload.when_created.strftime("%Y-%m-%d %H:%M:%S"),
+            "avgload" : host_avgload.avgload
+        }
+        rows.append(row)
+
+    columns = ['time', 'avgload']
+    return render_json({"result" : True, "data" : {"columns": columns, "rows": rows}})
+
 
 #endregion
 
@@ -218,7 +275,11 @@ def get_pie_data(request):
 
 #endregion 
 
+def test_celery(request):
 
+    execute_task()
+
+    return render_json({"result" : True})
 
 #endregion
 

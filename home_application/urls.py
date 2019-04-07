@@ -23,16 +23,22 @@ urlpatterns = patterns(
 
     (r'^demo/$', 'demo'),
     (r'^chart/$', 'chart'),
+    (r'^hosts/$', 'hosts'),
 
     (r'^search_biz_from_cmdb/$', 'search_biz_from_cmdb'),
     (r'^search_host_from_cmdb/$', 'search_host_from_cmdb'),
     (r'^search_host_from_db/$', 'search_host_from_db'),
     (r'^create_host_to_db/$', 'create_host_to_db'),
+    (r'^delete_host_from_db/$', 'delete_host_from_db'),
+    
 
     (r'^get_line_data/$', 'get_line_data'),
     (r'^get_histogram_data/$', 'get_histogram_data'),
     (r'^get_pie_data/$', 'get_pie_data'),
+    (r'^get_avgload/$', 'get_avgload'),
+    
 
+    (r'^test_celery/$', 'test_celery'),
     
 
 )
