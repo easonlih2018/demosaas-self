@@ -27,7 +27,7 @@ def async_task(x, y):
     logger.error(u"celery 定时任务执行成功，执行结果：{:0>2}:{:0>2}".format(x, y))
     return x + y
 
-@periodic_task(run_every=crontab(minute='*/5', hour='*', day_of_week="*"))
+@periodic_task(run_every=crontab(minute='*', hour='*', day_of_week="*"))
 def periodic_run_task():
     """
     执行定时任务
