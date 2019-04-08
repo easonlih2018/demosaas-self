@@ -3,7 +3,7 @@ import json
 
 import requests
 from django.http import JsonResponse
-import datetime
+from datetime import datetime
 from account.decorators import login_exempt
 from common.mymako import render_mako_context
 from common.mymako import render_json
@@ -277,6 +277,28 @@ def get_avgload(request):
     bk_host_id = content["bk_host_id"]
     date_filter = datetime.datetime.now()-datetime.timedelta(hours=1)
     host_avgloads = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = date_filter)
+    rows = []
+    for host_avgload in host_avgloads:
+        row = {
+            "time" : host_avgload.when_created.strftime("%Y-%m-%d %H:%M:%S"),
+            "avgload" : host_avgload.avgload
+        }
+        rows.append(row)
+
+    columns = ['time', 'avgload']
+    return render_json({"result" : True, "data" : {"columns": columns, "rows": rows}})
+
+def search_host_avgLoad(request):
+
+    content = json.loads(request.body)
+    bk_host_id = content["bk_host_id"]
+    start_time = content["start_time"]
+    end_time = content["end_time"]
+
+    d_start_time = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+    d_end_time = datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+    host_avgloads = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = d_start_time, when_created__lt = d_end_time)
     rows = []
     for host_avgload in host_avgloads:
         row = {

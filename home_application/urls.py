@@ -40,6 +40,8 @@ urlpatterns = patterns(
     (r'^get_mem_perf/$', 'get_mem_perf'),
     (r'^get_disk_perf/$', 'get_disk_perf'),
     (r'^get_avgload/$', 'get_avgload'),
+    (r'^search_host_avgLoad/$', 'search_host_avgLoad'),
+    
     
 
     (r'^test_celery/$', 'test_celery'),

@@ -52,7 +52,6 @@
         @on-ok="update_host_remark" @on-cancel="close_update_host" 
         :mask-closable="false" >
          <i-form :label-width="100">
-             <i-form :label-width="100">
                <form-item label="业务">
                       <i-input v-model="u_bk_biz_id" disabled ><i-input>
                </form-item>
@@ -62,12 +61,18 @@
                 <form-item label="备注">
                       <i-input v-model="u_remark" ><i-input>
                </form-item>
-            </i-form>
         </i-form>
         </Modal>
 
       <Modal v-model="host_perf_modal"  title="主机性能" 
         :mask-closable="false" :loading="true" fullscreen>
+        <i-form :label-width="100">
+               <form-item>
+                    <Date-picker type="datetime" v-model="startTime" placeholder="开始时间" style="width: 200px"></Date-picker> -  
+                    <Date-picker type="datetime" v-model="endTime" placeholder="结束时间" style="width: 200px"></Date-picker>
+                    <i-button type="primary" @click="search_host_avgLoad" >查询性能</i-button>   
+            </form-item>
+        </i-form>
             <div class="charts-wrapper">
                 <ve-line :data="lineData" width="400px"></ve-line>
             </div>
@@ -192,7 +197,10 @@
                 bk_host_name : "",
 
                 host_perf_modal : false,
+                perf_host : "",
                 lineData : [],
+                startTime : "",
+                endTime : "",
                 pieData : [],
                 diskPerf : [],
                 perfColumn : [
@@ -345,6 +353,7 @@
 
             show_performance(index){
                 this.host_perf_modal = true;
+                this.perf_host = this.hosts[index];
                 this.get_disk_perf(this.hosts[index]);
                 this.get_mem_perf(this.hosts[index]);
                 this.get_avgload(this.hosts[index]);
@@ -375,6 +384,15 @@
             get_avgload(host){
                 this.$http.post(site_url + 'get_avgload/',{
                     bk_host_id : host.bk_host_id
+                }).then(result => {
+                    this.lineData = result.data.data;
+                })
+            },
+            search_host_avgLoad(){
+                this.$http.post(site_url + 'search_host_avgLoad/',{
+                    bk_host_id : this.perf_host.bk_host_id,
+                    start_time : this.startTime,
+                    end_time : this.endTime
                 }).then(result => {
                     this.lineData = result.data.data;
                 })
