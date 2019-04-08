@@ -30,6 +30,7 @@ urlpatterns = patterns(
     (r'^search_host_from_db/$', 'search_host_from_db'),
     (r'^create_host_to_db/$', 'create_host_to_db'),
     (r'^delete_host_from_db/$', 'delete_host_from_db'),
+    (r'^update_host_remark/$', 'update_host_remark'),
     
 
     (r'^get_line_data/$', 'get_line_data'),

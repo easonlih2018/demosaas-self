@@ -42,10 +42,28 @@
         </i-form>
         </Modal>
 
+        <Modal v-model="update_host_modal"  title="修改主机" 
+        @on-ok="update_host_remark" @on-cancel="close_update_host" 
+        :mask-closable="false" >
+         <i-form :label-width="100">
+             <i-form :label-width="100">
+               <form-item label="业务">
+                      <i-input v-model="u_bk_biz_id" disabled ><i-input>
+               </form-item>
+                <form-item label="IP">
+                      <i-input v-model="u_bk_host_innerip" disabled  ><i-input>
+               </form-item>
+                <form-item label="备注">
+                      <i-input v-model="u_remark" ><i-input>
+               </form-item>
+            </i-form>
+        </i-form>
+        </Modal>
+
       <Modal v-model="host_perf_modal"  title="主机性能" 
         :mask-closable="false" :loading="true" fullscreen>
             <div class="charts-wrapper">
-                <ve-line :data="lineData" width="200px"></ve-line>
+                <ve-line :data="lineData" width="400px"></ve-line>
             </div>
             <div class="charts-wrapper">
                 <ve-pie :data="pieData" width="400px"></ve-pie>
@@ -100,8 +118,22 @@
                         width: 260,
                         align: 'center',
                         render: (h, params) => {
-                         
+                                
                                 return h('div', [
+                                 h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.update_reamark(params.index)
+                                        }
+                                    }
+                                }, '修改'),
                                 h('Button', {
                                     props: {
                                         type: 'primary',
@@ -143,6 +175,8 @@
                 search_host_loading : false,
                 search_host_modal : false,
 
+                update_host_modal : false,
+
                 hosts_fromCMDB : [],
                 bk_host_id : "",
                 bk_host_name : "",
@@ -176,7 +210,12 @@
                         title: 'Mounted on',
                         key: 'MountedOn'
                     }
-                ]
+                ],
+
+                u_bk_host_id : "",
+                u_bk_biz_id : "",
+                u_bk_host_innerip : "",
+                u_remark : ""
             }
         },
 
@@ -246,6 +285,33 @@
                 })
             },
 
+            update_reamark(index){
+                this.update_host_modal = true;
+                curHost = this.hosts[index];
+                this.u_bk_biz_id = curHost.bk_biz_id;
+                this.u_bk_host_id = curHost.bk_host_id;
+                this.u_bk_host_innerip = curHost.bk_host_innerip;
+                this.u_remark = curHost.remark;
+
+            },
+
+            update_host_remark(){
+                this.$http.post(site_url + 'update_host_remark/',{
+                    bk_host_id : this.u_bk_host_id,
+                    remark : this.u_remark
+                }).then(result => {
+                    console.log(result.data);
+                    this.update_host_modal = false;
+                    this.search_host_from_db();
+                })
+            },
+            close_update_host(){
+                this.update_host_modal = false;
+                this.u_bk_biz_id = "";
+                this.u_bk_host_id = "";
+                this.u_bk_host_innerip = "";
+                this.u_remark = "";
+            },
             show_hosts(){
                 this.search_host_modal = true;
                 this.search_biz();

@@ -185,6 +185,15 @@ def delete_host_from_db(request):
     
     return render_json({"result" : False, "message":"id 没有值"})
 
+def update_host_remark(request):
+    content = json.loads(request.body)
+    bk_host_id = content["bk_host_id"]
+    remark = content["remark"]
+
+    hosts = Hosts.objects.filter(bk_host_id = bk_host_id).update(remark = remark)
+
+    return render_json({"result" : True})
+    
 
 def get_disk_perf(request):
 
