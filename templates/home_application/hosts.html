@@ -33,6 +33,7 @@
                         <i-option v-for="item in bizs" :value="item.bk_biz_id">{{item.bk_biz_name}}</i-option>
                    </i-select>
             </form-item>
+           
             <form-item label="选择主机">
                    <i-select v-model="bk_host_id">
                         <i-option v-for="item in hosts_fromCMDB" :value="item.bk_host_id">{{item.bk_host_innerip}}</i-option>
@@ -41,12 +42,19 @@
         </i-form>
         </Modal>
 
-        <Modal v-model="show_perf_modal"  title="主机性能"  
-                 :mask-closable="false" :loading="true">
-            
-            <ve-line :data="lineData" width="800px"></ve-line>
-            <ve-pie :data="pieData" width="800px"></ve-pie>
-           
+      <Modal v-model="host_perf_modal"  title="主机性能" 
+        :mask-closable="false" :loading="true" fullscreen>
+            <div class="charts-wrapper">
+                <ve-line :data="lineData" width="200px"></ve-line>
+            </div>
+            <div class="charts-wrapper">
+                <ve-pie :data="pieData" width="400px"></ve-pie>
+            </div>
+            <div style="clear:both;">
+                <i-Table border :columns="perfColumn" :data="diskPerf" >
+
+                </i-Table>
+            </div>
 
         </Modal>
     </div>
@@ -77,6 +85,14 @@
                     {
                         title: '云区域',
                         key: 'bk_cloud_name'
+                    },
+                    {
+                        title: '所属业务',
+                        key: 'bk_biz_id'
+                    },
+                    {
+                        title: '操作系统类型',
+                        key: 'bk_os_type'
                     },
                     {
                         title: '操作',
@@ -129,11 +145,38 @@
 
                 hosts_fromCMDB : [],
                 bk_host_id : "",
+                bk_host_name : "",
 
-                show_perf_modal : false,
+                host_perf_modal : false,
                 lineData : [],
-                histogramData : [],
-                pieData : []
+                pieData : [],
+                diskPerf : [],
+                perfColumn : [
+                   {
+                        title: 'Filesystem',
+                        key: 'Filesystem'
+                    },
+                    {
+                        title: 'Size',
+                        key: 'Size'
+                    },
+                    {
+                        title: 'Used',
+                        key: 'Used'
+                    },             
+                    {
+                        title: 'Avail',
+                        key: 'Avail'
+                    },
+                    {
+                        title: 'Use',
+                        key: 'UsePecent'
+                    },
+                    {
+                        title: 'Mounted on',
+                        key: 'MountedOn'
+                    }
+                ]
             }
         },
 
@@ -186,6 +229,7 @@
                         curHost.bk_biz_id = this.biz_id;
                     }
                 })
+
                 this.$http.post(site_url + 'create_host_to_db/', {
                     host : curHost
                 }).then(result => {
@@ -210,6 +254,43 @@
             close_host_modal(){
                 this.search_host_modal = false;
                 
+            },
+
+            show_performance(index){
+                this.host_perf_modal = true;
+                this.get_disk_perf(this.hosts[index]);
+                this.get_mem_perf(this.hosts[index]);
+                this.get_avgload(this.hosts[index]);
+            },
+
+            get_disk_perf(host){
+                this.$http.post(site_url + 'get_disk_perf/',{
+                    biz_id : host.bk_biz_id,
+                    ip_list : [{
+                        ip : host.bk_host_innerip,
+                        bk_cloud_id : host.bk_cloud_id
+                    }]
+                }).then(result => {
+                    this.diskPerf = result.data.message
+                })
+            },
+            get_mem_perf(host){
+                this.$http.post(site_url + 'get_mem_perf/',{
+                    biz_id : host.bk_biz_id,
+                    ip_list : [{
+                        ip : host.bk_host_innerip,
+                        bk_cloud_id : host.bk_cloud_id
+                    }]
+                }).then(result => {
+                    this.pieData = result.data
+                })
+            },
+            get_avgload(host){
+                this.$http.post(site_url + 'get_avgload/',{
+                    bk_host_id : host.bk_host_id
+                }).then(result => {
+                    this.lineData = result.data.data;
+                })
             }
            
         },

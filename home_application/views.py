@@ -65,6 +65,9 @@ def hosts(request):
 
 #region 准备
 
+def testapi(request):
+    return render_json({"username":"admin","result":"ok"})
+
 def search_biz_from_cmdb(request):
     
     result = cc_search_biz()
@@ -208,11 +211,41 @@ def get_disk_perf(request):
                         "MountedOn" : logs[5]
                     }
             perfs.append(perf)
+    return render_json(perfs)
+
+def get_mem_perf(request):
+    content = json.loads(request.body)
+    biz_id = content["biz_id"]
+    ip_list = content["ip_list"]
+    script_content = '''#!/bin/bash
+    free -m
+    '''
+
+    log_result = run_script_and_get_log_content(biz_id, script_content, ip_list, request.user.username)
+
+    log_contents = log_result.split('\n')
+    
+    perfs = []
+    logs = log_contents[1].split()
+    if len(logs) > 6:
+        perfs = {
+                    "columns" : ["name","value"],
+                    "rows" :  [
+                        { "name": "used" ,"value": logs[2]},
+                        { "name": "free" ,"value": logs[3]},
+                        { "name": "shared" ,"value": logs[4]},
+                        { "name": "buff/cache" ,"value": logs[5]},
+                        { "name": "available","value": logs[6]}
+                    ]
+                }
+                
+    return render_json(perfs)
+
 
 def get_avgload(request):
 
-    #content = json.loads(request.body)
-    bk_host_id = 1
+    content = json.loads(request.body)
+    bk_host_id = content["bk_host_id"]
     date_filter = datetime.datetime.now()-datetime.timedelta(hours=1)
     host_avgloads = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = date_filter)
     rows = []

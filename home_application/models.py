@@ -21,6 +21,7 @@ class Hosts(models.Model):
 
     bk_biz_id = models.IntegerField(default=0)
     created_by = models.CharField(max_length=200)
+    remark = models.CharField(max_length=500)
 
 
 class HostPerf(models.Model):
