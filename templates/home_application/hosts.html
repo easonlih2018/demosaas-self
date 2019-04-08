@@ -29,8 +29,14 @@
                  @on-cancel="close_host_modal"  :mask-closable="false" :loading="true">
          <i-form :label-width="100">
              <form-item label="选择业务">
-                   <i-select v-model="biz_id" @on-change="search_host_from_cmdb">
+                   <i-select v-model="biz_id" @on-change="search_set_from_cmdb">
                         <i-option v-for="item in bizs" :value="item.bk_biz_id">{{item.bk_biz_name}}</i-option>
+                   </i-select>
+            </form-item>
+
+            <form-item label="选择集群">
+                   <i-select v-model="set_id" @on-change="search_host_from_cmdb">
+                        <i-option v-for="item in sets" :value="item.bk_set_id">{{item.bk_set_name}}</i-option>
                    </i-select>
             </form-item>
            
@@ -86,6 +92,10 @@
             return {
                 biz_id : "",
                 bizs : [],
+
+                set_id : "",
+                sets : [],
+
                 ip_filter : "",
                 hostColumn :  [
                     {
@@ -226,17 +236,28 @@
                         this.bizs = result.data.data;
                         if (this.bizs.length > 0 ){
                             this.biz_id = this.bizs[0].bk_biz_id;
-                            this.search_host_from_cmdb();
+                            this.search_set_from_cmdb();
                         }
 
                     }
                 )
             },
-
+            search_set_from_cmdb(){
+                this.$http.post(site_url + 'search_set_from_cmdb/',{
+                    biz_id : this.biz_id
+                }).then(result => {
+                    this.sets = result.data.data;
+                    if (this.sets.length > 0 ){
+                            this.set_id = this.sets[0].bk_set_id;
+                            this.search_host_from_cmdb();
+                        }
+                })
+            },
             search_host_from_cmdb(){
                
                 this.$http.post(site_url + 'search_host_from_cmdb/',{
                     bk_biz_id : this.biz_id,
+                    bk_set_id : this.set_id,
                     ip_list : this.ip_filter
                 }).then(
                     result => {

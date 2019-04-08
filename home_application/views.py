@@ -84,6 +84,23 @@ def search_biz_from_cmdb(request):
 
     return render_json({"result" : True, "data" : bizs})
 
+def search_set_from_cmdb(request):
+    content = json.loads(request.body)
+    set_id = content["biz_id"]
+    result = cc_search_set(set_id, request.user.username)
+    sets = []
+    if result["result"]:
+        for r_set in result["data"]["info"]:
+            set = {
+                "bk_set_id" : r_set["bk_set_id"],
+                "bk_set_name" : r_set["bk_set_name"]
+            }
+
+            sets.append(set)
+    return render_json({"result" : True, "data" : sets})
+
+
+
 def search_host_from_cmdb(request):
     
     content = json.loads(request.body)
@@ -133,7 +150,7 @@ def search_host_from_db(request):
     if "ip_filter" in content:
         ip_filter = content["ip_filter"]
         if ip_filter != "":
-            filter_hosts = Hosts.objects.filter( Q(bk_host_innerip__in = ip_filter) | Q(bk_host_outerip__in = ip_filter))
+            filter_hosts = Hosts.objects.filter( Q(bk_host_innerip = ip_filter) | Q(bk_host_outerip = ip_filter))
         else:
             filter_hosts = Hosts.objects.all()
     else:

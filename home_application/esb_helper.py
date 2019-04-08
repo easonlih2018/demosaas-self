@@ -219,7 +219,8 @@ def cc_search_set(biz_id, username='admin'):
         "bk_username": username,
         "bk_biz_id": int(biz_id),
         "fields": [
-            "bk_set_name"
+            "bk_set_name",
+            "bk_set_id"
         ],
         "condition": search,
         "page": {
