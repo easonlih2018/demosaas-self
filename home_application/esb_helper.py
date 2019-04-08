@@ -148,7 +148,7 @@ def run_script_and_get_log_content(biz_id, script, ip_list, username):
     else:
         return ""
 
-def cc_search_host(biz_id, ip_list, username = "admin"):
+def cc_search_host(biz_id, set_id, ip_list, username = "admin"):
     '''
     查询主机
     :param biz_id: 业务ID，int
@@ -182,6 +182,17 @@ def cc_search_host(biz_id, ip_list, username = "admin"):
             	 	"field": "bk_biz_id",
                 	"operator": "$eq",
                 	"value": int(biz_id)
+            	 }
+            ]
+        },
+        {
+            "bk_obj_id":"set",
+            "fields":["bk_set_id","bk_set_name"],
+            "condition":[
+                {
+            	 	"field": "bk_set_id",
+                	"operator": "$eq",
+                	"value": int(set_id)
             	 }
             ]
         }

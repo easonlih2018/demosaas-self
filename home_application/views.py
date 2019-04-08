@@ -106,13 +106,16 @@ def search_host_from_cmdb(request):
     content = json.loads(request.body)
     bk_biz_id = ""
     ip_list = []
+    bk_set_id = ""
     if "bk_biz_id" not in content:
         return render_json({"result" : False, "message" : "bk_biz_id not exists"})
     bk_biz_id = content["bk_biz_id"]
+    if "bk_set_id" in content:
+         bk_set_id = content["bk_set_id"]
     if "ip_list" in content:
         ip_list = content["ip_list"].split()
 
-    result = cc_search_host(bk_biz_id,ip_list,request.user.username)
+    result = cc_search_host(bk_biz_id, bk_set_id, ip_list,request.user.username)
     hosts = []
     if result["result"]:
         for r_host in result["data"]["info"]:
