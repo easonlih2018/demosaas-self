@@ -295,8 +295,8 @@ def search_host_avgLoad(request):
     start_time = content["start_time"]
     end_time = content["end_time"]
 
-    d_start_time = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
-    d_end_time = datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+    d_start_time = datetime.fromtimestamp(float(start_time) / 1000)
+    d_end_time = datetime.fromtimestamp(float(end_time) / 1000)
 
     host_avgloads = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = d_start_time, when_created__lt = d_end_time)
     rows = []

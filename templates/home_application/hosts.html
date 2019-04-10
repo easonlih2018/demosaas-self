@@ -391,8 +391,8 @@
             search_host_avgLoad(){
                 this.$http.post(site_url + 'search_host_avgLoad/',{
                     bk_host_id : this.perf_host.bk_host_id,
-                    start_time : this.startTime,
-                    end_time : this.endTime
+                    start_time : this.startTime.getTime(),
+                    end_time : this.endTime.getTime()
                 }).then(result => {
                     this.lineData = result.data.data;
                 })
