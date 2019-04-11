@@ -49,9 +49,15 @@ def modal(request):
 
 def host1(request):
     """
-    demo
+    host1
     """
     return render_mako_context(request, '/home_application/demo/host1.html')
+
+def host2(request):
+    """
+    host2
+    """
+    return render_mako_context(request, '/home_application/demo/host2.html')
 
 def chart(request):
     """
