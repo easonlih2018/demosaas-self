@@ -47,11 +47,11 @@ def modal(request):
     """
     return render_mako_context(request, '/home_application/modal.html')
 
-def demo(request):
+def host1(request):
     """
     demo
     """
-    return render_mako_context(request, '/home_application/demo/demo.html')
+    return render_mako_context(request, '/home_application/demo/host1.html')
 
 def chart(request):
     """
@@ -98,8 +98,6 @@ def search_set_from_cmdb(request):
 
             sets.append(set)
     return render_json({"result" : True, "data" : sets})
-
-
 
 def search_host_from_cmdb(request):
     

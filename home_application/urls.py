@@ -21,7 +21,7 @@ urlpatterns = patterns(
     (r'^get_log_content/$', 'get_log_content'),
     (r'^fast_push_file/$', 'fast_push_file'),
 
-    (r'^demo/$', 'demo'),
+    (r'^host1/$', 'host1'),
     (r'^chart/$', 'chart'),
     (r'^hosts/$', 'hosts'),
 
