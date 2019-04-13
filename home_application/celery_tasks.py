@@ -77,9 +77,9 @@ def execute_task():
         hostPerf = HostPerf()
         hostPerf.bk_host_id = host.bk_host_id
         hostPerf.avgload = 0
-        host_perf.cpu_usage = perform["cpu_usage"]
-        host_perf.mem_usage = perform["mem_usage"]
-        host_perf.disk_usage = perform["disk_usage"]
+        hostPerf.cpu_usage = perform["cpu_usage"].split('%')[0]
+        hostPerf.mem_usage = perform["mem_usage"]
+        hostPerf.disk_usage = perform["disk_usage"]
 
         hostPerf.save()
 

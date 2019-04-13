@@ -233,6 +233,11 @@
 
             show_monitor(index){
                 this.host_perf_modal = true;
+                this.$http.post(site_url + 'show_monitor/', {
+                    bk_host_id : this.hosts[index].bk_host_id
+                }).then(result => {
+                    this.lineData = result.data.data;
+                })
             }
             
            

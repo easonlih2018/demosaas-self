@@ -253,6 +253,26 @@ def show_performance(request):
         perform = {"error": result["data"]}
     return JsonResponse(perform)
 
+def show_monitor(request):
+
+    
+    content = json.loads(request.body)
+    bk_host_id = content["bk_host_id"]
+    host_perfs = HostPerf.objects.filter(bk_host_id = bk_host_id)
+    rows = []
+    for host_perf in host_perfs:
+        row = {
+            "time" : host_perf.when_created.strftime("%Y-%m-%d %H:%M:%S"),
+            "mem_usage" : host_perf.mem_usage,
+            "disk_usage" : host_perf.disk_usage,
+            "cpu_usage" : host_perf.cpu_usage
+        }
+        rows.append(row)
+
+    columns = ['time', 'mem_usage', 'disk_usage', 'cpu_usage']
+    return render_json({"result" : True, "data" : {"columns": columns, "rows": rows}})
+
+
 def update_host_remark(request):
     content = json.loads(request.body)
     bk_host_id = content["bk_host_id"]
@@ -262,8 +282,6 @@ def update_host_remark(request):
 
     return render_json({"result" : True})
     
-
-
 def get_disk_perf(request):
 
     content = json.loads(request.body)
