@@ -31,6 +31,7 @@
 
          <Modal v-model="host_perf_modal"  title="主机性能" 
             :mask-closable="false" :loading="true" fullscreen>
+            
             <div class="charts-wrapper">
                 <ve-line :data="lineData" width="400px"></ve-line>
             </div>

@@ -44,6 +44,7 @@ urlpatterns = patterns(
     (r'^get_avgload/$', 'get_avgload'),
     (r'^search_host_avgLoad/$', 'search_host_avgLoad'),
     (r'^show_performance/$', 'show_performance'),
+    (r'^show_monitor/$', 'show_monitor'),
     
     
 
