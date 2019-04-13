@@ -4,6 +4,7 @@ import json
 import requests
 from django.http import JsonResponse
 from datetime import datetime
+from datetime import timedelta
 from account.decorators import login_exempt
 from common.mymako import render_mako_context
 from common.mymako import render_json
@@ -258,7 +259,8 @@ def show_monitor(request):
     
     content = json.loads(request.body)
     bk_host_id = content["bk_host_id"]
-    host_perfs = HostPerf.objects.filter(bk_host_id = bk_host_id)
+    date_filter = datetime.now() - timedelta(hours=1)
+    host_perfs = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = date_filter)
     rows = []
     for host_perf in host_perfs:
         row = {
@@ -342,7 +344,7 @@ def get_avgload(request):
 
     content = json.loads(request.body)
     bk_host_id = content["bk_host_id"]
-    date_filter = datetime.datetime.now()-datetime.timedelta(hours=1)
+    date_filter = datetime.now()-timedelta(hours=1)
     host_avgloads = HostPerf.objects.filter(bk_host_id = bk_host_id, when_created__gt = date_filter)
     rows = []
     for host_avgload in host_avgloads:
