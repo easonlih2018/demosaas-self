@@ -31,7 +31,13 @@
 
          <Modal v-model="host_perf_modal"  title="主机性能" 
             :mask-closable="false" :loading="true" fullscreen>
-            
+             <i-form :label-width="100">
+               <form-item label="选择主机">
+                   <i-select v-model="m_bk_host_id" @on-change="search_host_perf">
+                        <i-option v-for="item in m_hosts" :value="item.bk_host_id">{{item.bk_host_innerip}}</i-option>
+                   </i-select>
+               </form-item>
+            </i-form>
             <div class="charts-wrapper">
                 <ve-line :data="lineData" width="400px"></ve-line>
             </div>
@@ -174,7 +180,9 @@
                 hosts : [],
                 search_host_loading : false,
                 host_perf_modal : false,
-                lineData : []
+                lineData : [],
+                m_hosts : [],
+                m_bk_host_id : ""
             }
         },
 
@@ -234,13 +242,30 @@
 
             show_monitor(index){
                 this.host_perf_modal = true;
+                this.search_host_from_db();
+                this.m_bk_host_id = this.hosts[index].bk_host_id;
                 this.$http.post(site_url + 'show_monitor/', {
                     bk_host_id : this.hosts[index].bk_host_id
                 }).then(result => {
                     this.lineData = result.data.data;
                 })
-            }
+            },
             
+             search_host_from_db(){
+                this.$http.post(site_url + 'search_host_from_db/',{
+                    ip_filter : ""
+                }).then(result => {
+                    this.m_hosts = result.data.data;
+                })
+            },
+
+            search_host_perf(){
+                this.$http.post(site_url + 'show_monitor/', {
+                    bk_host_id : this.m_bk_host_id
+                }).then(result => {
+                    this.lineData = result.data.data;
+                })
+            }
            
         },
 
