@@ -306,7 +306,7 @@
 
             delete_host_from_Monitor(index){
                 this.$http.post(site_url + 'delete_host_from_db/', {
-                    id : this.hosts[index].id
+                    bk_host_id : this.hosts[index].bk_host_id
                 }).then(result => {
                      this.search_host_from_db();
                 })

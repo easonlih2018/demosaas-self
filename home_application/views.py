@@ -215,15 +215,15 @@ def create_host_to_db(request):
 def delete_host_from_db(request):
 
     content = json.loads(request.body)
-    id = ""
-    if "id" in content:
-        id = content["id"]
+    bk_host_id = ""
+    if "bk_host_id" in content:
+        bk_host_id = content["bk_host_id"]
     
-    if id != "":
-        Hosts.objects.filter(id=id).delete()
+    if bk_host_id != "":
+        Hosts.objects.filter(bk_host_id = bk_host_id).delete()
         return render_json({"result" : True, "message":"ok"})
     
-    return render_json({"result" : False, "message":"id 没有值"})
+    return render_json({"result" : False, "message":"bk_host_id 没有值"})
 
 def show_performance(request):
 
