@@ -148,6 +148,58 @@ def run_script_and_get_log_content(biz_id, script, ip_list, username):
     else:
         return ""
 
+def cc_search_host_with_biz(biz_id, ip_list, username = "admin"):
+    '''
+    查询主机
+    :param biz_id: 业务ID，int
+    :param ips: 过滤ip
+    :return: 查询主机结果
+    '''
+    url = BK_PAAS_HOST + "/api/c/compapi/v2/cc/search_host/"
+
+    # region  请求json数据
+  
+    content = {
+        "bk_app_code": APP_ID,
+        "bk_app_secret": APP_TOKEN,
+        "bk_username": username,
+        "ip": {
+            "data": ip_list,
+            "exact": 1,
+            "flag": "bk_host_innerip|bk_host_outerip"
+        },
+        "condition": [
+        {
+            "bk_obj_id": "host",
+            "fields": ["bk_host_id","bk_host_name","bk_host_innerip"],
+            "condition": []
+        },
+        {
+            "bk_obj_id":"biz",
+            "fields":["bk_biz_id","bk_biz_name"],
+            "condition":[
+                {
+            	 	"field": "bk_biz_id",
+                	"operator": "$eq",
+                	"value": int(biz_id)
+            	 }
+            ]
+        }        
+    ],
+    "page": {
+        "start": 0,
+        "limit": 10,
+        "sort": "bk_host_id"
+    },
+    "pattern": ""
+    }
+    # endregion
+    
+    response = requests.post(url, json.dumps(content), verify=False)
+    result = json.loads(response.content)
+
+    return result
+
 def cc_search_host(biz_id, set_id, ip_list, username = "admin"):
     '''
     查询主机

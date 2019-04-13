@@ -56,19 +56,34 @@ def execute_task():
     # async_task.apply_async(args=[now.hour, now.minute], eta=now + datetime.timedelta(seconds=60))
 
     hosts = Hosts.objects.all()
-    script = '''#!/bin/bash
-    cat /proc/loadavg
-    '''
+    script = """#!/bin/bash
+
+    MEMORY=$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')
+    DISK=$(df -h | awk '$NF=="/"{printf "%s", $5}')
+    CPU=$(top -bn1 | grep load | awk '{printf "%.2f%%", $(NF-2)}')
+    DATE=$(date "+%Y-%m-%d %H:%M:%S")
+    echo -e "$DATE|$MEMORY|$DISK|$CPU"
+    """
     for host in hosts:
         ip_list = [{"ip":host.bk_host_innerip, "bk_cloud_id": host.bk_cloud_id}]
         log_content = run_script_and_get_log_content(host.bk_biz_id, script, ip_list, host.created_by)
-        avgloads = log_content.split()
-        if len(avgloads) > 0:
-                avgload = avgloads[1]
-                hostPerf = HostPerf()
-                hostPerf.bk_host_id = host.bk_host_id
-                hostPerf.avgload = avgload
-                hostPerf.save()
+        host_perf = log_content.split("|")
+
+        perform = {
+            "mem_usage": host_perf[1].strip("%"),
+            "disk_usage": host_perf[2].strip("%"),
+            "cpu_usage": host_perf[3].strip("%"),
+        }
+        hostPerf = HostPerf()
+        hostPerf.bk_host_id = host.bk_host_id
+        hostPerf.avgload = 0
+        host_perf.cpu_usage = perform["cpu_usage"]
+        host_perf.mem_usage = perform["mem_usage"]
+        host_perf.disk_usage = perform["disk_usage"]
+
+        hostPerf.save()
+
+                
 
 
 

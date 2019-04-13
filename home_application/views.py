@@ -69,6 +69,10 @@ def hosts(request):
 
     return render_mako_context(request, '/home_application/hosts.html')
 
+def hosts1(request):
+
+    return render_mako_context(request, '/home_application/hosts1.html')
+
 #region 准备
 
 def testapi(request):
@@ -76,7 +80,7 @@ def testapi(request):
 
 def search_biz_from_cmdb(request):
     
-    result = cc_search_biz()
+    result = cc_search_biz(request.user.username)
 
     bizs = []
     if result["result"]:
@@ -118,8 +122,13 @@ def search_host_from_cmdb(request):
          bk_set_id = content["bk_set_id"]
     if "ip_list" in content:
         ip_list = content["ip_list"].split()
+    result = []
+    if bk_set_id == "":
+        result = cc_search_host_with_biz(bk_biz_id, ip_list,request.user.username)
+    else:
+        result = cc_search_host(bk_biz_id, bk_set_id, ip_list,request.user.username)
+    monitorHosts = Hosts.objects.filter(bk_biz_id = bk_biz_id)
 
-    result = cc_search_host(bk_biz_id, bk_set_id, ip_list,request.user.username)
     hosts = []
     if result["result"]:
         for r_host in result["data"]["info"]:
@@ -141,11 +150,17 @@ def search_host_from_cmdb(request):
                 "bk_mem": r_host["host"]["bk_mem"],
                 "bk_os_type": r_host["host"]["bk_os_type"],
 
+                "mem_usage" : "-",
+                "disk_usage" : "-",
+                "cpu_usage" : "-",
+
                 "is_monitored" : False
             }
+            for monitorHost in monitorHosts:
+                if monitorHost.bk_host_id == host["bk_host_id"]:
+                    host["is_monitored"] = True
             hosts.append(host)
     return render_json({"result" : True, "data": hosts})
-
 
 #region 操作数据库
 def search_host_from_db(request):
@@ -157,7 +172,7 @@ def search_host_from_db(request):
     if "ip_filter" in content:
         ip_filter = content["ip_filter"]
         if ip_filter != "":
-            filter_hosts = Hosts.objects.filter( Q(bk_host_innerip = ip_filter) | Q(bk_host_outerip = ip_filter))
+            filter_hosts = Hosts.objects.filter( Q(bk_host_innerip__icontains = ip_filter) | Q(bk_host_outerip__icontains = ip_filter))
         else:
             filter_hosts = Hosts.objects.all()
     else:
@@ -209,6 +224,35 @@ def delete_host_from_db(request):
     
     return render_json({"result" : False, "message":"id 没有值"})
 
+def show_performance(request):
+
+    content = request.body
+    content = json.loads(content)
+    ip_list = content["ip_list"]
+    bk_biz_id = content["bk_biz_id"]
+    script_content = """#!/bin/bash
+
+    MEMORY=$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')
+    DISK=$(df -h | awk '$NF=="/"{printf "%s", $5}')
+    CPU=$(top -bn1 | grep load | awk '{printf "%.2f%%", $(NF-2)}')
+    DATE=$(date "+%Y-%m-%d %H:%M:%S")
+    echo -e "$DATE|$MEMORY|$DISK|$CPU"
+    """
+
+    result = run_fast_execute_script(bk_biz_id, script_content, ip_list, request.user.username)
+
+    if result["result"]:
+        result = get_job_instance_log(bk_biz_id, result["data"])
+        log_result = result[0]["log_content"].strip().split("|")
+        perform = {
+            "mem_usage": log_result[1].strip("%"),
+            "disk_usage": log_result[2].strip("%"),
+            "cpu_usage": log_result[3].strip("%"),
+        }
+    else:
+        perform = {"error": result["data"]}
+    return JsonResponse(perform)
+
 def update_host_remark(request):
     content = json.loads(request.body)
     bk_host_id = content["bk_host_id"]
@@ -218,6 +262,7 @@ def update_host_remark(request):
 
     return render_json({"result" : True})
     
+
 
 def get_disk_perf(request):
 

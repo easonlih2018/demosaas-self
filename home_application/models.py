@@ -29,4 +29,7 @@ class HostPerf(models.Model):
     bk_host_id = models.IntegerField()
     when_created = models.DateTimeField(auto_now_add=True)
     avgload = models.FloatField()
+    cpu_usage = models.FloatField()
+    mem_usage = models.FloatField()
+    disk_usage = models.FloatField()
 

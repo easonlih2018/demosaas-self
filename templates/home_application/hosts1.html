@@ -29,6 +29,13 @@
             
         </div>
 
+         <Modal v-model="host_perf_modal"  title="主机性能" 
+            :mask-closable="false" :loading="true" fullscreen>
+            <div class="charts-wrapper">
+                <ve-line :data="lineData" width="400px"></ve-line>
+            </div>
+        </Modal>
+
     </div>
 </%block>
 <script>
@@ -57,6 +64,18 @@
                     {
                         title: '云区域',
                         key: 'bk_cloud_name'
+                    },
+                    {
+                        title: 'Mem(%)',
+                        key: 'mem_usage'
+                    },
+                    {
+                        title: 'Disk(%)',
+                        key: 'disk_usage'
+                    },
+                    {
+                        title: 'CPU(%)',
+                        key: 'cpu_usage'
                     },
                     {
                         title: '操作',
@@ -94,7 +113,22 @@
                                             this.add_host_toMonitor(params.index)
                                         }
                                     }
-                                }, '移除监控')
+                                }, '移除监控'),
+
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.show_monitor(params.index)
+                                        }
+                                    }
+                                }, '查看监控')
                             ]);
                             }
                             else{
@@ -127,16 +161,7 @@
                                             this.add_host_toMonitor(params.index)
                                         }
                                     }
-                                }, '添加监控'),
-                                h('a', {
-                                    props:{
-                                        
-                                    },
-                                    attrs:{
-                                        href : 'https://www.baidu.com',
-                                        target : '_blank'
-                                    }
-                                }, '测试跳转'),
+                                }, '添加监控')
                             ]);
                             }
 
@@ -146,7 +171,9 @@
                    
                 ],
                 hosts : [],
-                search_host_loading : false
+                search_host_loading : false,
+                host_perf_modal : false,
+                lineData : []
             }
         },
 
@@ -177,19 +204,35 @@
             },
 
             add_host_toMonitor(index){
+                this.hosts[index].bk_biz_id = this.biz_id;
                 this.$http.post(site_url + 'create_host_to_db/', {
                     host : this.hosts[index]
                 }).then(result => {
+                    this.search_host();
                     
                 })
             },
 
             show_performance(index){
-                console.log("show_performance");
+                this.$http.post(site_url + 'show_performance/', {
+                    bk_biz_id : this.biz_id,
+                    ip_list : [{
+                        ip : this.hosts[index]["bk_host_innerip"],
+                        bk_cloud_id : this.hosts[index]["bk_cloud_id"]
+                    }]
+                }).then(result => {
+                    this.hosts[index]["disk_usage"] = result.data["disk_usage"];
+                    this.hosts[index]["mem_usage"] = result.data["mem_usage"];
+                    this.hosts[index]["cpu_usage"] = result.data["cpu_usage"];
+                })
             },
 
             runInterval(){
                 console.log("runInterval.....");
+            },
+
+            show_monitor(index){
+                this.host_perf_modal = true;
             }
             
            

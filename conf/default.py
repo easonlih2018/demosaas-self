@@ -29,12 +29,12 @@ from django.conf.global_settings import *  # noqa
 
 # APP_ID = 'demosaas-1'
 # APP_TOKEN = 'aa5723b4-77a8-4224-9c67-e6fa01caefb6'
-# # 蓝鲸智云开发者中心的域名，形如：http://paas.bking.com
+# # # 蓝鲸智云开发者中心的域名，形如：http://paas.bking.com
 # BK_PAAS_HOST = 'https://ios.corp.hq.csg'
 
 APP_ID = 'eason-exam'
 APP_TOKEN = 'fed1e49e-c81d-4877-ac5f-84bc745c46af'
-# # 蓝鲸智云开发者中心的域名，形如：http://paas.bking.com
+# # # 蓝鲸智云开发者中心的域名，形如：http://paas.bking.com
 BK_PAAS_HOST = 'http://paas.bkike.com'
 
 # 请求官方 API 默认版本号，可选值为："v2" 或 ""；其中，"v2"表示规范化API，""表示未规范化API
