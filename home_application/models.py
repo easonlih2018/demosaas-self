@@ -33,3 +33,13 @@ class HostPerf(models.Model):
     mem_usage = models.FloatField()
     disk_usage = models.FloatField()
 
+class Script(models.Model):
+
+    name = models.CharField(max_length=200)
+    version = models.IntegerField()
+    remark = models.CharField(max_length=500)
+    resouce = models.IntegerField()
+    category = models.IntegerField()
+    content = models.CharField(max_length=1000)
+    when_created = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=200)

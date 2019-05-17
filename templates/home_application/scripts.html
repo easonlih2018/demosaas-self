@@ -1,0 +1,288 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+
+    <div class="home-page" id="app">
+        <div class="wrappers">
+            <i-form :label-width="100">
+                 <form-item>
+                    脚本名称：<i-input v-model="name_filter" style="width:200px;"  placeholder="请输入脚本名称..." ></i-input>
+                    创建人：<i-input v-model="created_by" style="width:150px;"   placeholder="请输入创建人..." ></i-input>
+                     创建时间：<Date-Picker type="date"  style="width: 100px" v-model="start_time"></Date-Picker> - 
+                            <Date-Picker type="date"  style="width: 100px" v-model="end_time"></Date-Picker>
+                    脚本来源：
+                    <i-select style="width:100px;" v-model="source_filter">
+                            <i-option value="0">全部</i-option>
+                            <i-option value="1">手工录入</i-option>
+                            <i-option value="2">脚本克隆</i-option>
+                            <i-option value="3">本地脚本</i-option>
+                    </i-select>
+                     脚本类型：
+                    <i-select style="width:100px;" v-model="category_filter">
+                            <i-option value="0">全部</i-option>
+                            <i-option value="1">shell</i-option>
+                            <i-option value="2">bat</i-option>
+                            <i-option value="3">perl</i-option>
+                            <i-option value="4">python</i-option>
+                            <i-option value="5">powershell</i-option>
+                    </i-select>
+                 </form-item>
+                 <form-item>
+                    <i-button type="primary" @click="search_scripts">查询脚本</i-button>    
+                    <i-button type="primary" @click="show_create_script">创建脚本</i-button> 
+                </form-item>
+            </i-form>
+            <Card>
+                <p slot="title">
+                    <Icon type="ios-film-outline"></Icon>
+                    脚本列表
+                </p>
+                <i-Table border :columns="scriptColumn" :data="scripts" >
+
+                </i-Table>
+            </Card>
+            
+        </div>
+
+         <Modal v-model="script_info_modal"  title="脚本信息" 
+          @on-ok="save_script" @on-cancel="close_add_script_win" 
+            :mask-closable="false" :loading="true" >
+             <i-form :label-width="100"> 
+                 <form-item label="名称">
+                      <i-input v-model="name" placeholder="请输入名称"></i-input>
+                 </form-item>
+                 <form-item label="脚本来源">
+                       <i-select style="width:100px;" v-model="source_add">
+                            <i-option value="1">手工录入</i-option>
+                            <i-option value="2">脚本克隆</i-option>
+                            <i-option value="3">本地脚本</i-option>
+                        </i-select>
+                 </form-item>
+                 <form-item label="脚本类型">
+                       <i-select style="width:100px;" v-model="category_add">
+                            <i-option value="1">shell</i-option>
+                            <i-option value="2">bat</i-option>
+                            <i-option value="3">perl</i-option>
+                            <i-option value="4">python</i-option>
+                            <i-option value="5">powershell</i-option>
+                    </i-select>
+                 </form-item>
+                 <form-item label="内容">
+                      <i-input v-model="content" type="textarea" rows="4" placeholder="请输入内容"></i-input>
+                 </form-item>
+                 <form-item label="备注">
+                      <i-input v-model="remark" placeholder="请输入备注"></i-input>
+                 </form-item>
+            </i-form>
+        </Modal>
+
+    </div>
+</%block>
+<script>
+    Vue.prototype.$http = axios;
+    Vue.use(iview);
+    new Vue({
+        el : "#app",
+        data (){
+            return {
+                script_info_modal : false,
+                name_filter : "",
+                source_filter : "0",
+                category_filter : "0",
+                start_time : new Date(new Date().getTime() - 24*60*60*1000),
+                end_time : new Date(),
+
+                is_add : false,
+                id : "",
+                source_add : "1",
+                category_add : "1",
+                name : "",
+                content : "",
+                remark : "",
+                
+                scriptColumn :  [
+                    {
+                        title: '脚本名称',
+                        key: 'name'
+                    },
+                    {
+                        title: '创建人',
+                        key: 'created_by'
+                    },
+                    {
+                        title: '创建时间',
+                        key: 'when_created'
+                    },
+                    {
+                        title: '脚本来源',
+                        key: 'source_name'
+                    },
+                    {
+                        title: '脚本类型',
+                        key: 'category_name'
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        width: 260,
+                        align: 'center',
+                        render: (h, params) => {
+                                return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.update_script(params.index)
+                                        }
+                                    }
+                                }, '编辑'),
+                                
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.delete_script(params.index)
+                                        }
+                                    }
+                                }, '删除')
+
+                               
+                            ]);
+                                
+                        }
+                    }
+                   
+                ],
+                scripts : [],
+
+                created_by : ""
+            }
+        },
+
+        methods:{
+
+            search_scripts(){
+                this.$http.post(site_url + 'search_script/', {
+                    "name" : this.name_filter,
+                    "created_by" : this.created_by,
+                    "category" : this.category_filter,
+                    "source" : this.source_filter,
+                    "start_time" : this.start_time.getTime(),
+                    "end_time" : this.end_time.getTime()
+
+                }).then(
+                    result => {
+                        this.scripts = result.data.data;
+                    }
+                )
+            },
+
+            show_create_script(){
+                this.is_add = true;
+                this.script_info_modal = true;
+            },
+
+            close_add_script_win(){
+                this.script_info_modal = false;
+            },
+
+            save_script(){
+                if(this.is_add){
+                     this.$http.post(site_url + 'create_script/', {
+                        "name" : this.name,
+                        "source" : this.source_add,
+                        "category" : this.category_add,
+                        "content" : this.content,
+                        "remark" : this.remark
+                    }).then(
+                        result => {
+                            if(result.data.result){
+                                this.search_scripts();
+                                this.script_info_modal = false;
+                            }
+                            else{
+                                this.$Message.info(result.data.message);
+                            }
+                        }
+                    )
+                }
+                else{
+                      this.$http.post(site_url + 'update_script/', {
+                        "id" : this.id,
+                        "name" : this.name,
+                        "source" : this.source_add,
+                        "category" : this.category_add,
+                        "content" : this.content,
+                        "remark" : this.remark
+                    }).then(
+                        result => {
+                            if(result.data.result){
+                                this.search_scripts();
+                                this.script_info_modal = false;
+                            }
+                            else{
+                                this.$Message.info(result.data.message);
+                            }
+                        }
+                    )
+                }
+               
+            },
+
+            update_script(index){
+               this.is_add = false;
+                this.$http.post(site_url + 'get_script_by_id/', {
+                     "id" : this.scripts[index].id
+                }).then(result => {
+                    let script_info = result.data.data;
+                    this.id = script_info["id"];
+                    this.name = script_info["name"]
+                    this.source_add = script_info["source"].toString();
+                    this.category_add = script_info["category"].toString();
+                    this.content = script_info["content"];
+                    this.remark = script_info["remark"];
+                });
+
+                this.script_info_modal = true;
+            },
+
+            delete_script(index){
+                this.$http.post(site_url + 'delete_script/', {
+                    id : this.scripts[index].id
+                }).then(
+                    result => {
+                        if(result.data.result)
+                        {
+                            this.search_scripts()
+                        }
+                    }
+                )
+            }
+
+
+
+           
+        },
+
+        mounted() {
+            this.search_scripts();
+            // 定时器
+            // setInterval(this.runInterval, 1000);
+        }
+
+        
+
+    });
+</script>

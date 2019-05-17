@@ -4,13 +4,22 @@ from django.conf.urls import patterns
 
 urlpatterns = patterns(
     'home_application.views',
-    (r'^$', 'hosts1'),
+    (r'^$', 'scripts'),
     (r'^dev-guide/$', 'dev_guide'),
     (r'^contactus/$', 'contactus'),
     (r'^test/$', 'test'),
     (r'^modal/$', 'modal'),
     (r'^api/getJson/$', 'getJson'),
     (r'^api/getEchartsJson/$', 'getEchartsJson'),
+
+    
+    (r'^scripts/$', 'scripts'),
+    (r'^search_script/$', 'search_script'),
+    (r'^create_script/$', 'create_script'),
+    (r'^delete_script/$', 'delete_script'),
+    (r'^get_script_by_id/$', 'get_script_by_id'),
+    (r'^update_script/$', 'update_script'),
+    
 
     (r'^search_biz/$', 'search_biz'),
     (r'^search_set/$', 'search_set'),

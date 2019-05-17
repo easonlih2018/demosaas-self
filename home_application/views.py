@@ -10,9 +10,148 @@ from common.mymako import render_mako_context
 from common.mymako import render_json
 from conf.default import APP_ID, APP_TOKEN, BK_PAAS_HOST
 from home_application.esb_helper import *
-from models import Hosts, HostPerf
+from models import Hosts, HostPerf, Script
 from django.db.models import Q
 from celery_tasks import execute_task
+
+#region 作业
+def scripts(request):
+    """
+    脚本列表
+    """
+    return render_mako_context(request, '/home_application/scripts.html')
+
+def search_script(request):
+    search_filter = json.loads(request.body)
+
+    filter_objects = Script.objects.all()
+    if "name" in search_filter and search_filter["name"] != "":
+        filter_objects = filter_objects.filter(Q(name__icontains = search_filter["name"]))
+
+    if "created_by" in search_filter and search_filter["created_by"] != "":
+        filter_objects = filter_objects.filter(Q(created_by__icontains = search_filter["created_by"]))
+
+    if "category" in search_filter and search_filter["category"] != "0":
+        filter_objects = filter_objects.filter(category = search_filter["category"])
+
+    if "source" in search_filter and search_filter["source"] != "0":
+        filter_objects = filter_objects.filter(resouce = search_filter["source"])
+
+    if "start_time" in search_filter and search_filter["start_time"] != "":
+        d_start_time = datetime.fromtimestamp(float(search_filter["start_time"]) / 1000)
+        filter_objects = filter_objects.filter(when_created__gt = d_start_time)
+
+    if "end_time" in search_filter and search_filter["end_time"] != "":
+        d_end_time = datetime.fromtimestamp(float(search_filter["end_time"]) / 1000)
+        filter_objects = filter_objects.filter(when_created__lt = d_end_time)
+        
+    dbresults = list(filter_objects.values())
+    result = []
+    for dbresult in dbresults:
+        script = {
+            "id" : dbresult["id"],
+            "name" : dbresult["name"],
+            "source" : dbresult["resouce"],
+            "source_name" : get_source_name(dbresult["resouce"]),
+            "category" : dbresult["category"],
+            "category_name" : get_category_name(dbresult["category"]),
+            "content" : dbresult["content"],
+            "when_created" : dbresult["when_created"].strftime("%Y-%m-%d %H:%M:%S"),
+            "created_by" : dbresult["created_by"]
+        }
+        result.append(script)
+    return render_json({"result":True, "data" : result})
+
+def create_script(request):
+
+    request_content = json.loads(request.body)
+    script = Script()
+    script.name = request_content["name"]
+    script.resouce = request_content["source"]
+    script.category = request_content["category"]
+    script.content = request_content["content"]
+    script.remark = request_content["remark"]
+    script.version = 1
+    script.created_by = request.user.username
+
+    script.save()
+    return render_json({"result" : True, "message" : "ok"})
+
+def delete_script(request):
+
+    content = json.loads(request.body)
+    id = content["id"]
+
+    Script.objects.filter(id = id).delete()
+
+    return render_json({"result" : True, "message" : "ok"})
+
+def update_script(request):
+
+    content = json.loads(request.body)
+    id = content["id"]
+    name = content["name"]
+    category = content["category"]
+    source = content["source"]
+    script_content = content["content"]
+    remark = content["remark"]
+
+    script = Script.objects.get(id = id)
+
+    script.name = name
+    script.category = category
+    script.resouce = source
+    script.content = script_content
+    script.remark = remark
+    script.version = script.version + 1
+    script.save()
+
+    return render_json({"result" : True, "message" : "ok"})
+
+
+
+
+
+
+def get_script_by_id(request):
+
+    content = json.loads(request.body)
+    id = content["id"]
+    script = Script.objects.filter(id = id).values()
+    if len(script) > 0:
+        result = {
+            "id" : script[0]["id"],
+            "name" : script[0]["name"],
+            "source" : script[0]["resouce"],
+            "category" : script[0]["category"],
+            "content" : script[0]["content"],
+            "remark" : script[0]["remark"]
+        }
+        return render_json({"result":True, "data":result})
+
+    return render_json({"result" : True, "message" : "failed"})
+
+def get_category_name(category_id):
+
+    categorys = {
+        1 : "shell",
+        2 : "bat",
+        3 : "perl",
+        4 : "python",
+        5 : "powershell"
+    }
+
+    return categorys[category_id]
+
+def get_source_name(source_id):
+    sources = {
+        1 : "手工录入",
+        2 : "脚本克隆",
+        3 : "本地脚本"
+    }
+    return sources[source_id]
+
+#endregion
 
 def home(request):
     """
@@ -74,7 +213,7 @@ def hosts1(request):
 
     return render_mako_context(request, '/home_application/hosts1.html')
 
-#region 准备
+#region API
 
 def testapi(request):
     return render_json({"username":"admin","result":"ok"})
