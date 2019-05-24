@@ -19,6 +19,10 @@ urlpatterns = patterns(
     (r'^delete_script/$', 'delete_script'),
     (r'^get_script_by_id/$', 'get_script_by_id'),
     (r'^update_script/$', 'update_script'),
+    (r'^execute_script/$', 'execute_script'),
+    (r'^search_host_execute_result/$', 'search_host_execute_result'),
+
+    (r'^host-list/$', 'hostlist'),
     
 
     (r'^search_biz/$', 'search_biz'),

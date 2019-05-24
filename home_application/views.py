@@ -10,16 +10,26 @@ from common.mymako import render_mako_context
 from common.mymako import render_json
 from conf.default import APP_ID, APP_TOKEN, BK_PAAS_HOST
 from home_application.esb_helper import *
-from models import Hosts, HostPerf, Script
+from models import Hosts, HostPerf, Script, HostScriptResult
 from django.db.models import Q
 from celery_tasks import execute_task
 
 #region 作业
+
+
+def hostlist(request):
+    """
+    主机列表
+    """
+    return render_mako_context(request, '/home_application/host-list.html')
+
+
 def scripts(request):
     """
     脚本列表
     """
     return render_mako_context(request, '/home_application/scripts.html')
+
 
 def search_script(request):
     search_filter = json.loads(request.body)
@@ -44,7 +54,7 @@ def search_script(request):
     if "end_time" in search_filter and search_filter["end_time"] != "":
         d_end_time = datetime.fromtimestamp(float(search_filter["end_time"]) / 1000)
         filter_objects = filter_objects.filter(when_created__lt = d_end_time)
-        
+
     dbresults = list(filter_objects.values())
     result = []
     for dbresult in dbresults:
@@ -61,6 +71,41 @@ def search_script(request):
         }
         result.append(script)
     return render_json({"result":True, "data" : result})
+
+def execute_script(request):
+    content = json.loads(request.body)
+    biz_id = content["biz_id"]
+    ip_list = [
+        {"ip": content["host"]["bk_host_innerip"], "bk_cloud_id": content["host"]["bk_cloud_id"]}
+    ]
+    script = content["script"]["content"]
+
+    result = run_script_and_get_log_content(biz_id, script, ip_list, request.user.username)
+
+    script_id = content["script"]["id"]
+    host_id = content["host"]["bk_host_id"]
+
+    script_result = HostScriptResult()
+
+    script_result.script_id = script_id
+    script_result.host_id = host_id
+    script_result.execute_result = result
+
+    script_result.save()
+
+    return render_json({"result": True, "message": "ok"})
+
+def search_host_execute_result(request):
+    content = json.loads(request.body)
+    host_id = content["host_id"]
+    host_execute_result = ""
+    result = HostScriptResult.objects.filter(host_id=host_id).order_by("id").reverse()
+    if result.count() > 0:
+        host_execute_result= result[0].execute_result
+    else:
+        host_execute_result= "无执行历史"
+
+    return  render_json({"result": True, "data": host_execute_result})
 
 def create_script(request):
 
@@ -108,11 +153,6 @@ def update_script(request):
 
     return render_json({"result" : True, "message" : "ok"})
 
-
-
-
-
-
 def get_script_by_id(request):
 
     content = json.loads(request.body)
@@ -134,24 +174,28 @@ def get_script_by_id(request):
 def get_category_name(category_id):
 
     categorys = {
-        1 : "shell",
-        2 : "bat",
-        3 : "perl",
-        4 : "python",
-        5 : "powershell"
+        1: "shell",
+        2: "bat",
+        3: "perl",
+        4: "python",
+        5: "powershell"
     }
 
     return categorys[category_id]
 
+
 def get_source_name(source_id):
     sources = {
-        1 : "手工录入",
-        2 : "脚本克隆",
-        3 : "本地脚本"
+        1: "手工录入",
+        2: "脚本克隆",
+        3: "本地脚本"
     }
     return sources[source_id]
 
-#endregion
+
+
+# endregion
+
 
 def home(request):
     """

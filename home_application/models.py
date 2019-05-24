@@ -43,3 +43,10 @@ class Script(models.Model):
     content = models.CharField(max_length=1000)
     when_created = models.DateTimeField(auto_now_add=True)
     created_by = models.CharField(max_length=200)
+
+
+class HostScriptResult(models.Model):
+
+    host_id = models.IntegerField()
+    script_id = models.IntegerField()
+    execute_result = models.CharField(max_length=2000)

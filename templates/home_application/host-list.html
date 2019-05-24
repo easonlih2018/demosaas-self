@@ -1,0 +1,216 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+
+    <div class="home-page" id="app">
+        <div class="wrappers">
+            <i-form :label-width="100">
+               <form-item label="选择业务">
+                   <i-select v-model="biz_id">
+                        <i-option v-for="item in bizs" :value="item.bk_biz_id">{{item.bk_biz_name}}</i-option>
+                   </i-select>
+               </form-item>
+               <form-item label="请输入IP">
+                      <i-input v-model="ip_filter" type="textarea" :rows="4" placeholder="请输入IP..." />
+               </form-item>
+               <form-item>
+                        <i-button type="primary" @click="search_host" :loading="search_host_loading">查询主机</i-button>
+                </form-item>
+            </i-form>
+            <Card>
+                <p slot="title">
+                    <Icon type="ios-film-outline"></Icon>
+                    主机列表
+                </p>
+                <i-Table border :columns="hostColumn" :data="hosts" >
+
+                </i-Table>
+            </Card>
+
+        </div>
+
+        <Modal v-model="scipts_modal"  title="选择脚本"
+               @on-ok="execute_script" :mask-closable="false" :loading="true" ok-text="执行">
+            <div style="clear:both;">
+                <i-Table border  highlight-row @on-current-change="select_row_change" :columns="scriptColumn" :data="scripts" >
+
+                </i-Table>
+            </div>
+
+        </Modal>
+
+        <Modal v-model="execute_result_modal"  title="最近脚本执行结果"
+               :mask-closable="false" :loading="true" >
+            <div style="clear:both;">
+                <i-input v-model="host_execute_result" style="width:500px;" type="textarea" :rows="8" disabled />
+            </div>
+
+        </Modal>
+    </div>
+</%block>
+<script>
+    Vue.prototype.$http = axios;
+    Vue.use(iview);
+    new Vue({
+        el : "#app",
+        data (){
+            return {
+                biz_id : "",
+                bizs : [],
+                ip_filter : "",
+                hostColumn :  [
+                    {
+                        title: '内网IP',
+                        key: 'bk_host_innerip'
+                    },
+                    {
+                        title: '系统名',
+                        key: 'bk_os_name'
+                    },
+                    {
+                        title: '主机名',
+                        key: 'bk_host_name'
+                    },
+                    {
+                        title: '云区域',
+                        key: 'bk_cloud_name'
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        width: 260,
+                        align: 'center',
+                        render: (h, params) => {
+                                return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.search_script(params.index)
+                                        }
+                                    }
+                                }, '执行脚本'),
+
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.search_execute_script_log(params.index)
+                                        }
+                                    }
+                                }, '查看执行结果')
+                            ]);
+
+                        }
+                    }
+
+                ],
+                hosts : [],
+                search_host_loading : false,
+                currentHost : {},
+                scipts_modal : false,
+                scripts : [],
+                scriptColumn : [
+                    {
+                        title: '脚本名称',
+                        key: 'name'
+                    },
+                    {
+                        title: '脚本类型',
+                        key: 'category_name'
+                    },
+                    {
+                        title: '脚本来源',
+                        key: 'source_name'
+                    }
+                    ],
+                currentScript : {},
+
+                execute_result_modal: false,
+                host_execute_result: ""
+            }
+        },
+
+        methods:{
+            search_biz(){
+                this.$http.get(site_url + 'search_biz_from_cmdb').then(
+                    result => {
+                        this.bizs = result.data.data;
+                        if (this.bizs.length > 0 ){
+                            this.biz_id = this.bizs[0].bk_biz_id;
+                        }
+
+                    }
+                )
+            },
+
+            search_host(){
+                this.search_host_loading = true;
+                this.$http.post(site_url + 'search_host_from_cmdb/',{
+                    bk_biz_id : this.biz_id,
+                    ip_list : this.ip_filter
+                }).then(
+                    result => {
+                        this.hosts = result.data.data;
+                        this.search_host_loading = false;
+                    }
+                )
+            },
+
+            search_script(index){
+                this.scipts_modal = true;
+                this.currentHost = this.hosts[index];
+                this.$http.post(site_url + 'search_script/',{
+
+                }).then(result => {
+                    this.scripts = result.data.data;
+                })
+            },
+
+            select_row_change(currentRow, oldCurrentRow){
+                this.currentScript = currentRow;
+            },
+            execute_script(){
+                this.$http.post(site_url + 'execute_script/',{
+                    host: this.currentHost,
+                    script: this.currentScript,
+                    biz_id: this.biz_id
+                }).then(result => {
+                    console.log(result);
+                    this.scipts_modal = false;
+                })
+
+            },
+            search_execute_script_log(index){
+                this.$http.post(site_url + 'search_host_execute_result/', {
+                    host_id: this.hosts[index].bk_host_id
+                }).then(result => {
+                    this.host_execute_result = result.data.data;
+                    this.execute_result_modal = true;
+                })
+            },
+
+        },
+
+        mounted() {
+            this.search_biz();
+            // 定时器
+            // setInterval(this.runInterval, 1000);
+        }
+
+
+
+    });
+</script>
